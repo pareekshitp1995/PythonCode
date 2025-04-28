@@ -1,7 +1,7 @@
 import arcpy
 import pandas as pd
 import matplotlib.pyplot as plt
-import Lab4_functions as l4
+import poudel_pareekshit_Lab4_functions_Lab4_functions as l4
 import importlib
 ## Testing
 
