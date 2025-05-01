@@ -1,7 +1,7 @@
 import arcpy
 import pandas as pd
 import matplotlib.pyplot as plt
-import poudel_pareekshit_Lab4_functions_Lab4_functions as l4
+import poudel_pareekshit_Lab4_functions as l4
 import importlib
 ## Testing
 
@@ -24,7 +24,7 @@ import importlib
 #   
 # Set the workspace to point to the geodatabase you are using for this lab
 
-arcpy.env.workspace = r"R:\2025\Spring\GEOG562\Instructors\kennedy_2025\Lab4\Lab4_arcproject_REK\Lab4_arcproject_REK.gdb" 
+arcpy.env.workspace = r"R:\2025\Spring\GEOG562\Students\poudelp\Lab_4\lab4_arcproject_pp\lab4_arcproject_pp.gdb" 
 
 ############################################################################
 # Block 3:  We are going to work with the notion of extending raster objects
@@ -47,8 +47,11 @@ print(r.metadata["bounds"])
 #  Why do we need to use the "super()" function in the definition of the SmartRaster?
 
 # Your answer:
-
-
+# We need to use the "super()" function because we want to define a class based on existing class and super()
+# function allows us to call the methods and properties of the parent class (arcpy.Raster) within the
+# child class (SmartRaster). This enables us to extend the functionality of the parent class while still
+# retaining its original behavior and attributes. In this case, it allows us to access the methods and properties
+# of the arcpy.Raster class while adding our own custom methods and attributes to the SmartRaster class.
 
 
 
@@ -71,20 +74,8 @@ print(r.metadata["bounds"])
 okay, ndvi = r.calculate_ndvi()
 
 # Assuming this is okay, write it to a new raster that we can use later
-out_ndvi_file = "NDVI_corv"
-if okay: 
-    print("NDVI calculation successful.")
-    #Check first if the file already exists
-    if arcpy.Exists(out_ndvi_file):
-        print(f"{out_ndvi_file} already exists. ")
-    # Write the NDVI raster to a new file
-    try:
-        ndvi.save(out_ndvi_file)
-        print(f"{out_ndvi_file}written successfully.")
-    except Exception as e:
-        print(f"Error writing NDVI raster: {e}")    
-else:
-    print("NDVI calculation failed.")
+
+
 
 # Question 4.1 
 #  In the "calculate_ndvi", the method accepts 

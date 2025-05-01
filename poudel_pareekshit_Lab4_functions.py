@@ -32,44 +32,65 @@ class SmartRaster(arcpy.Raster):
         }
 
 
-    # def calculate_ndvi(self,  band4_index = 4, band3_index = 3):
+    def calculate_ndvi(self,  band4_index = 4, band3_index = 3):
 
-    #     """Calculate NDVI using the NIR and Red bands."""
+        """Calculate NDVI using the NIR and Red bands."""
        
-    #     # set up an indicator about whether things work for later
-    #     okay = True
+        # set up an indicator about whether things work for later
+        okay = True
+        returnval = None
 
-    #     #embed everything in a try/except block
-    #     # First get the bands.  You can use the band numbers to get the bands
-    #     #   from the raster. 
+        #embed everything in a try/except block
+        # First get the bands.  You can use the band numbers to get the bands
+        #   from the raster. 
 
-    #     # Your code:
+        # Your code:
+        try: 
 
+            # check to see if the raster_path is there!
+            if arcpy.Exists(self.raster_path):  
+            
+            # load just the NIR band into a raster object
+                nir = arcpy.Raster(self.raster_path+"\\"+str("Band_")+str(band4_index))
 
-      
+            # load just the red band into a raster object
+            
+                red = arcpy.Raster(self.raster_path+"\\"+str("Band_")+str(band3_index))
+        
 
-
-
-    #     # Now we have the two bands.    
-    #     #   calculate (NIR-Red)/(NIR+red), which is the formula for
-    #     #   NDVI. 
-
-    #     #  Embed in a try/except block, so we can catch any errors that might occur
-
-    #     # Calculate the NDVI, and return an "okay, ndvi" if it worked, 
-    #     #   okay, e as the exception if it didn't.
-
-    #     #your code:
-
-
-       
-
-
-
-
-
+            else:   # in this case, the image does not exist
+                okay = False
+                returnval = r"{self.raster_path} does not appear to exist in the workspace: {arcpy.env.workspace}"
+                return okay, returnval
+        
+        except Exception as e:  # this is some problem reading the image
+            okay = False
+            returnval = e
+            return okay, returnval 
 
 
+        # Now we have the two bands.    
+        #   calculate (NIR-Red)/(NIR+red), which is the formula for
+        #   NDVI. 
+
+        #  Embed in a try/except block, so we can catch any errors that might occur
+
+        # Calculate the NDVI, and return an "okay, ndvi" if it worked, 
+        #   okay, e as the exception if it didn't.
+
+        #your code:
+
+        try: 
+            ndvi = (nir-red)/(nir+red)
+            return okay, ndvi
+        except Exception as e:
+            okay = False
+            returnval = e
+            return okay, returnval
+        # End my code
+
+
+   
 # Potential smart vector layer
 
 # class SmartVectorLayer:
