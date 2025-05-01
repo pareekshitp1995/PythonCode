@@ -231,7 +231,7 @@ sp.scatterplot(x_field, y_field, x_min=1901, x_max = 2030)
 
 
 
-"""
+
 ###############################################################
 #  Block 8
 
@@ -258,16 +258,13 @@ sp.scatterplot(x_field, y_field, x_min=1901, x_max = 2030)
 
 # You have the SmartPanda as "sp" from above, right?
 #   Here, and you have the name of the file for the control file
-#  Below, simply call the "plot_from_file" method to run the .csv fil
+#  Below, simply call the "plot_from_file" method to run the .csv file
 
 param_file = 'params_1.csv'  #  this assumes you've placed in the 
                             # python code directory you're working in here. 
 # Your code:
 
-
-
-#  My code
-
+#  Call the plot_from_file method to read the parameters from the CSV file
 ok = sp.plot_from_file(param_file)
 if ok:
     print("Done plotting")
@@ -310,4 +307,3 @@ if ok:
 
 
 
-"""
