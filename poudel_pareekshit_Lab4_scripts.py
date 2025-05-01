@@ -74,8 +74,24 @@ print(r.metadata["bounds"])
 okay, ndvi = r.calculate_ndvi()
 
 # Assuming this is okay, write it to a new raster that we can use later
+import os
+#  First, check to see if the file exists.  If it does, delete it.
 
+if okay:
+        out_ndvi_file = os.path.join(
+            os.path.dirname(r.raster_path),
+            "NDVI"
+        )
+        
+        if arcpy.Exists(out_ndvi_file):
+            arcpy.management.Delete(out_ndvi_file)
+            print("✅ Deleted existing NDVI file:", out_ndvi_file)
 
+        ndvi.save(out_ndvi_file)
+        print("✅ NDVI written to:", out_ndvi_file)
+    
+else:
+    print("❌ NDVI calculation failed:", ndvi)
 
 # Question 4.1 
 #  In the "calculate_ndvi", the method accepts 
@@ -84,7 +100,10 @@ okay, ndvi = r.calculate_ndvi()
 #    set them here -- why did it work?
 
 #  Your answer:
-
+# calculte_ndvi method works because in its defination, it has default values
+# for band4_index and band3_index. So, it treats them as optional arguments.
+# If we don't provide values for them, it uses the default values of 4 and 3 respectively.
+# This makes the method work even if we don't specify the band indices when calling it.
 
 
 
@@ -111,6 +130,7 @@ okay, ndvi = r.calculate_ndvi()
 #     field called mean_ndvi
 
 
+
 importlib.reload(l4)
 fc = "Corvallis_parcels" # remember you should have copied this into your workspace in Block 2.
 
@@ -133,10 +153,14 @@ smart_vector.save_as("Corvallis_parcels_plusNDVI")
 # 
 
 #Your answer
-
-
-
-
+# Yes, the zonal stats for NDVI worked reasonably. The mean NDVI values were
+# calculated for each parcel in the Corvallis_parcels feature class based on the NDVI raster.
+# The oddities I observed were that some parcels had very high mean NDVI values
+# higher than 0.8, which indicates a high level of vegetation cover.
+# Higher than values of 0.8 indicate that there could be Sensor saturation or 
+# very dense irrigated crops; values this high are uncommon.
+# These high values were there even if the parcels were not in areas with dense 
+# vegetation.
 
 
 # Block 6: 
@@ -160,8 +184,11 @@ okay, df = smart_vector.extract_to_pandas_df()
 #   code?  
 
 # Your answer
-
-
+# It means that the fields parameter is optional and can be omitted when calling the method.
+# It tests if the fields parameter is None, if true, it automatically
+# assigns the fields to all the fields in the feature class. Otherwise, 
+# it uses the provided fields to extract data. This allows the user to
+# either specify specific fields or extract all fields from the feature class.
 
 
 
@@ -192,15 +219,19 @@ sp.scatterplot(x_field, y_field, x_min=1901, x_max = 2030)
 #  You'll note that I use the same test for x_min not being "None". 
 # But what about the second line -- what is df_to_plot, 
 #    and what does this line achieve? 
-#  
-
 
 # Your answer:
+# If x_min is given, keep only rows with YEAR_BUILT ≥ x_min;
+# if x_min is None, leave the data unchanged (no lower-limit filter).
+
+# df_to_plot is a filtered version of the original DataFrame (df)
+# that only includes rows where the x_field (YEAR_BUILT) is greater than or 
+# equal to x_min (if provided). This allows for dynamic filtering of the data
+# based on the user's input for the x-axis minimum value.
 
 
 
-
-
+"""
 ###############################################################
 #  Block 8
 
@@ -279,3 +310,4 @@ if ok:
 
 
 
+"""

@@ -51,11 +51,11 @@ class SmartRaster(arcpy.Raster):
             if arcpy.Exists(self.raster_path):  
             
             # load just the NIR band into a raster object
-                nir = arcpy.Raster(self.raster_path+"\\"+str("Band_")+str(band4_index))
+                nir = arcpy.Raster(self.raster_path+"\\" + str("Band_") + str(band4_index))
 
             # load just the red band into a raster object
             
-                red = arcpy.Raster(self.raster_path+"\\"+str("Band_")+str(band3_index))
+                red = arcpy.Raster(self.raster_path+"\\" + str("Band_") + str(band3_index))
         
 
             else:   # in this case, the image does not exist
@@ -87,228 +87,280 @@ class SmartRaster(arcpy.Raster):
             okay = False
             returnval = e
             return okay, returnval
-        # End my code
+        
+#End of the SmartRaster class
 
+ 
+#Potential smart vector layer
 
+class SmartVectorLayer:
+    def __init__(self, feature_class_path):
+        """Initialize with a path to a vector feature class"""
+        self.feature_class = feature_class_path
+        
+        # Check if it exists
+        if not arcpy.Exists(self.feature_class):
+            raise FileNotFoundError(f"{self.feature_class} does not exist.")
+    def summarize_field(self, field):
+        # set up a tracking variable to track if things work
+        okay = True
+
+        #check if the field is in the legit list
+        try: 
+            existing_fields = [f.name for f in arcpy.ListFields(self.feature_class)]
+            if field not in existing_fields:
+                okay = False
+                print(f"The field {field} is not in list of possible fields")
+                return False, None
+        except Exception as e:
+            print(f"Problem checking the fields: {e}")
+
+        # now go through and get the mean value
+        try: 
+            with arcpy.da.SearchCursor(self.feature_class, [field]) as cursor:
+                vals = [row[0] for row in cursor if row[0] is not None and not math.isnan(row[0])]
+            mean = sum(vals)/len(vals)
+            return okay, mean
+        except Exception as e:
+            print(f"Problem calculating mean: {e}")
+            okay = False
+            return okay, None
+
+    
+    def zonal_stats_to_field(self, raster_path, statistic_type="MEAN", output_field="ZonalStat"):
+        """
+        For each feature in the vector layer, calculates the zonal statistic from the raster
+        and writes it to a new field.
+        
+        Parameters:
+        - raster_path: path to the raster
+        - statistic_type: type of statistic ("MEAN", "SUM", etc.)
+        - output_field: name of the field to create to store results
+        """
+        # set up a tracking variable to track if things work
+        okay = True
+
+        # Add a field to store the zonal stats result.
+        #  If the field already exists, however, return to the user
+        #  to let them know that it exists. 
+
+        #Your code
+        existing_field_name = [fn.name for fn in arcpy.ListFields(self.feature_class)]
+
+        if output_field in existing_field_name:
+            print(f"Field '{output_field}' already exists, aborting to avoid overwrite.")
+            okay = False
+            return okay
+        # Else Add the new field (DOUBLE so it can hold decimals)
+        try:
+            arcpy.management.AddField(
+                in_table   = self.feature_class,
+                field_name = output_field,
+                field_type = "DOUBLE"
+            )
+        except Exception as e:
+            print(f"Problem adding field '{output_field}': {e}")
+            okay = False
+            return okay
+        
    
-# Potential smart vector layer
-
-# class SmartVectorLayer:
-#     def __init__(self, feature_class_path):
-#         """Initialize with a path to a vector feature class"""
-#         self.feature_class = feature_class_path
+        # Create a temporary table to hold zonal statistics
+        temp_table = "in_memory\\temp_zonal_stats"
+        if arcpy.Exists(temp_table):
+            arcpy.management.Delete(temp_table)
         
-#         # Check if it exists
-#         if not arcpy.Exists(self.feature_class):
-#             raise FileNotFoundError(f"{self.feature_class} does not exist.")
-#     def summarize_field(self, field):
-#         # set up a tracking variable to track if things work
-#         okay = True
+        # Use an arcpy.sa command to calculate the 
+        #   zonal stats.  Embed in a try/except block
 
-#         #check if the field is in the legit list
-#         try: 
-#             existing_fields = [f.name for f in arcpy.ListFields(self.feature_class)]
-#             if field not in existing_fields:
-#                 okay = False
-#                 print(f"The field {field} is not in list of possible fields")
-#                 return False, None
-#         except Exception as e:
-#             print(f"Problem checking the fields: {e}")
-
-#         # now go through and get the mean value
-#         try: 
-#             with arcpy.da.SearchCursor(self.feature_class, [field]) as cursor:
-#                 vals = [row[0] for row in cursor if row[0] is not None and not math.isnan(row[0])]
-#             mean = sum(vals)/len(vals)
-#             return okay, mean
-#         except Exception as e:
-#             print(f"Problem calculating mean: {e}")
-#             okay = False
-#             return okay, None
-
-    
-#     def zonal_stats_to_field(self, raster_path, statistic_type="MEAN", output_field="ZonalStat"):
-#         """
-#         For each feature in the vector layer, calculates the zonal statistic from the raster
-#         and writes it to a new field.
+        #  Your code
+        try:
+            arcpy.sa.ZonalStatisticsAsTable(
+                in_zone_data = self.feature_class,
+                zone_field    = "OBJECTID",
+                in_value_raster = raster_path,
+                out_table      = temp_table,
+                ignore_nodata = "DATA",
+                statistics_type = statistic_type
+            )
         
-#         Parameters:
-#         - raster_path: path to the raster
-#         - statistic_type: type of statistic ("MEAN", "SUM", etc.)
-#         - output_field: name of the field to create to store results
-#         """
-#         # set up a tracking variable to track if things work
-#         okay = True
-
-#         # Add a field to store the zonal stats result.
-#         #  If the field already exists, however, return to the user
-#         #  to let them know that it exists. 
-
-#         #Your code
-
-
-
-      
-
-#         # Create a temporary table to hold zonal statistics
-#         temp_table = "in_memory\\temp_zonal_stats"
-#         if arcpy.Exists(temp_table):
-#             arcpy.management.Delete(temp_table)
-        
-#         # Use an arcpy.sa command to calculate the 
-#         #   zonal stats.  Embed in a try/except block
-
-#         #  Your code
-
+        except Exception as e:
+            print(f"Problem calculating zonal statistics: {e}")
+            okay = False
+            return okay
 
         
-#         # Now join the results back and update the field
-#         zonal_results = {}
+        # Now join the results back and update the field
+        zonal_results = {}
         
-#         # First, read through the Zonal stats table we just created. 
+        # First, read through the Zonal stats table we just created. 
 
-#         try:
-#             table_count = 0
-#             # NOTE:  the "OBJECTID_1" is needed because when Arc builds 
-#             #   the temporary zonal stats file, it adds its own new OBJECTID
-#             #   that ascends in incremental order. But the unique ID from the
-#             #   original attribute table is what we want to focus on -- its 
-#             #    name gets adjusted with an _1 at the end so the original value is kept
-#             #    but to keep it unique from the OBJECTID that Arc builds for the
-#             #    zonal table.  Kind of annoying. 
+        try:
+            table_count = 0
+            # NOTE:  the "OBJECTID_1" is needed because when Arc builds 
+            #   the temporary zonal stats file, it adds its own new OBJECTID
+            #   that ascends in incremental order. But the unique ID from the
+            #   original attribute table is what we want to focus on -- its 
+            #    name gets adjusted with an _1 at the end so the original value is kept
+            #    but to keep it unique from the OBJECTID that Arc builds for the
+            #    zonal table.  Kind of annoying. 
 
-#             with arcpy.da.SearchCursor(temp_table, ["OBJECTID_1", statistic_type]) as cursor:
-#                 for row in cursor:
-#                     zonal_results[row[0]] = row[1]
-#                     table_count+=1
-#             print(f"Processed {table_count} zonal stats")
-#         except Exception as e:
-#             print(f"Problem reading the zonal results table: {e}")
-#             okay = False
-#             return okay
+            with arcpy.da.SearchCursor(temp_table, ["OBJECTID_1", statistic_type]) as cursor:
+                for row in cursor:
+                    zonal_results[row[0]] = row[1]
+                    table_count+=1
+            print(f"Processed {table_count} zonal stats")
+        except Exception as e:
+            print(f"Problem reading the zonal results table: {e}")
+            okay = False
+            return okay
         
 
         
-#         #Then Update the feature class with the zonal_results
-#         #  Use the Object ID to find the right 
-#         #    zonal stats number from the zonal_results dictionary
-#         #    as you go through the attribute table of the feature class
-#         print("Joining zonal stats back to Object ID")
+        #Then Update the feature class with the zonal_results
+        #  Use the Object ID to find the right 
+        #    zonal stats number from the zonal_results dictionary
+        #    as you go through the attribute table of the feature class
+        print("Joining zonal stats back to Object ID")
                
-#         # Your code
+        # Your code
+        try:
+            with arcpy.da.UpdateCursor(self.feature_class, ["OBJECTID", output_field]) as cursor:
+                count = 0
+                for row in cursor:
+                    object_id = row[0]
+                    if object_id in zonal_results:
+                        row[1] = zonal_results[object_id]
+                        cursor.updateRow(row)
+                        count += 1
+            print(f"Updated {count} rows with zonal statistics.")
+        except Exception as e:
+            print(f"Problem updating the feature class with zonal stats: {e}")
+            okay = False
+            return okay
 
 
+        # Clean up
+        arcpy.management.Delete(temp_table)
 
-
-#         # Clean up
-#         arcpy.management.Delete(temp_table)
-
-#         print(f"Zonal stats '{statistic_type}' added to field '{output_field}'.")
-#         return okay
+        print(f"Zonal stats '{statistic_type}' added to field '{output_field}'.")
+        return okay
 
     
-#     def save_as(self, output_path):
-#         """Save the current vector layer to a new feature class"""
-#         arcpy.management.CopyFeatures(self.feature_class, output_path)
-#         print(f"Saved to {output_path}")
+    def save_as(self, output_path):
+        """Save the current vector layer to a new feature class"""
+        if arcpy.Exists(output_path):
+            arcpy.management.Delete(output_path)
+            print("✅ Deleted existing NDVI file:", output_path)
+        arcpy.management.CopyFeatures(self.feature_class, output_path)
+        print(f"✅ Saved to {output_path}")
 
 
-#     # Take our vector object and turn it into a pandas dataframe
+    # Take our vector object and turn it into a pandas dataframe
 
-#     def extract_to_pandas_df(self, fields=None):
-#         # set up tracker variable
-#         okay = True
+    def extract_to_pandas_df(self, fields=None):
+        # set up tracker variable
+        okay = True
 
-#         #First, get the list of fields to extract if the user did 
-#         #  not pass them
+        #First, get the list of fields to extract if the user did 
+        #  not pass them
 
-#         if fields is None: # If the user did not pass anything
-#             # List all field names (excluding geometry)
-#             fields = [f.name for f in arcpy.ListFields(self.feature_class) if f.type not in ('Geometry', 'OID')]
-#         else: 
-#             #check to make sure that the fields given are actually in the table, 
-#             #   and make sure to exclue the geometry and oid.
+        if fields is None: # If the user did not pass anything
+            # List all field names (excluding geometry)
+            fields = [f.name for f in arcpy.ListFields(self.feature_class) if f.type not in ('Geometry', 'OID')]
+        else: 
+            #check to make sure that the fields given are actually in the table, 
+            #   and make sure to exclue the geometry and oid.
 
-#             true_fields = [f.name for f in arcpy.ListFields(self.feature_class) if f.type not in ('Geometry', 'OID')]
+            true_fields = [f.name for f in arcpy.ListFields(self.feature_class) if f.type not in ('Geometry', 'OID')]
 
-#             #accumulate the ones that do not match
-#             disallowed = [user_f for user_f in fields if user_f not in true_fields]
+            #accumulate the ones that do not match
+            disallowed = [user_f for user_f in fields if user_f not in true_fields]
 
-#             # if the list is not empty, let the user know
-#             if len(disallowed) != 0:
-#                 print("Fields given by user are not valid for this table")
-#                 print(disallowed)
-#                 okay = False
-#                 return okay, None
+            # if the list is not empty, let the user know
+            if len(disallowed) != 0:
+                print("Fields given by user are not valid for this table")
+                print(disallowed)
+                okay = False
+                return okay, None
         
-#         # Step 2: Create a search cursor and extract rows
-#         #    to a "rows" list variable.  This is a very short 
-#         #    command -- should be old hat by now!  
+        # Step 2: Create a search cursor and extract rows
+        #    to a "rows" list variable.  This is a very short 
+        #    command -- should be old hat by now!  
 
-#         # vvvvvvvvvvvvvvv
-#         # Your code: 
+        # vvvvvvvvvvvvvvv
+        # Your code:
+        rows = []
+        try:
+            with arcpy.da.SearchCursor(self.feature_class, fields) as cursor:
+                for row in cursor:
+                    rows.append(row)
 
+        except Exception as e:
+            print(f"Problem extracting rows: {e}")
+            okay = False
+            return okay, None
 
-#         # Step 3: Convert to pandas DataFrame
-#         df = pd.DataFrame(rows, columns=fields)
+        
+        # Step 3: Convert to pandas DataFrame
+        df = pd.DataFrame(rows, columns=fields)
                 
-#         return okay, df
+        return okay, df
 
 
 # Uncomment this when you get to the appropriate block in the scripts
-#  file and re-load the functions
+# file and re-load the functions
 
-# class smartPanda(pd.DataFrame):
+class smartPanda(pd.DataFrame):
 
-#     # This next bit is advanced -- don't worry about it unless you're 
-#     # curious.  It has to do with the pandas dataframe
-#     # being a complicated thing that could be created from a variety
-#     #   of types, and also that it creates a new dataframe
-#     #   when it does operations.  The use of @property is called
-#     #   a "decorator".  The _constructor(self) is a specific 
-#     #   expectation of Pandas when it does operations.  This just
-#     #   tells it that when it does an operation, make the new thing
-#     #   into a special smartPanda type, not an original dataframe. 
+    # This next bit is advanced -- don't worry about it unless you're 
+    # curious.  It has to do with the pandas dataframe
+    # being a complicated thing that could be created from a variety
+    #   of types, and also that it creates a new dataframe
+    #   when it does operations.  The use of @property is called
+    #   a "decorator".  The _constructor(self) is a specific 
+    #   expectation of Pandas when it does operations.  This just
+    #   tells it that when it does an operation, make the new thing
+    #   into a special smartPanda type, not an original dataframe. 
 
-#     @property
-#     def _constructor(self):
-#         return smartPanda
+    @property
+    def _constructor(self):
+        return smartPanda
     
-#     # here, just set up a method to plot and to allow
-#     #   the user to define the min and max of the plot. 
+    # here, just set up a method to plot and to allow
+    #   the user to define the min and max of the plot. 
 
 
-#     def scatterplot(self, x_field, y_field, title=None, 
-#                     x_min=None, x_max=None, 
-#                     y_min=None, y_max=None):
-#         """Make a scatterplot of two columns, with validation."""
+    def scatterplot(self, x_field, y_field, title=None, 
+                    x_min=None, x_max=None, 
+                    y_min=None, y_max=None):
+        """Make a scatterplot of two columns, with validation."""
 
-#         # Validate
-#         for field in [x_field, y_field]:
-#             if field not in self.columns:
-#                 raise ValueError(f"Field '{field}' not found in DataFrame columns.")
+        # Validate
+        for field in [x_field, y_field]:
+            if field not in self.columns:
+                raise ValueError(f"Field '{field}' not found in DataFrame columns.")
 
-#         # filter the range
-#         df_to_plot = self
-#         if x_min is not None:
-#             df_to_plot = df_to_plot[df_to_plot[x_field] >= x_min]
-#         if x_max is not None:
-#             df_to_plot = df_to_plot[df_to_plot[x_field] <= x_max]
-#         if y_min is not None:
-#             df_to_plot = df_to_plot[df_to_plot[y_field] >= y_min]
-#         if y_max is not None:
-#             df_to_plot = df_to_plot[df_to_plot[y_field] <= y_max]
+        # filter the range
+        df_to_plot = self
+        if x_min is not None:
+            df_to_plot = df_to_plot[df_to_plot[x_field] >= x_min]
+        if x_max is not None:
+            df_to_plot = df_to_plot[df_to_plot[x_field] <= x_max]
+        if y_min is not None:
+            df_to_plot = df_to_plot[df_to_plot[y_field] >= y_min]
+        if y_max is not None:
+            df_to_plot = df_to_plot[df_to_plot[y_field] <= y_max]
 
 
 
-#         # Proceed to plot
-#         plt.figure(figsize=(8,6))
-#         plt.scatter(df_to_plot[x_field], df_to_plot[y_field])
-#         plt.xlabel(x_field)
-#         plt.ylabel(y_field)
-#         plt.title(title if title else f"{y_field} vs {x_field}")
-#         plt.grid(True)
-#         plt.show()
+        # Proceed to plot
+        plt.figure(figsize=(8,6))
+        plt.scatter(df_to_plot[x_field], df_to_plot[y_field])
+        plt.xlabel(x_field)
+        plt.ylabel(y_field)
+        plt.title(title if title else f"{y_field} vs {x_field}")
+        plt.grid(True)
+        plt.show()
 
 
 #     def mean_field(self, field):
