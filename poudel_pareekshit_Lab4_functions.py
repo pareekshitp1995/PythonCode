@@ -7,14 +7,23 @@ import matplotlib.pyplot as plt
 class SmartRaster(arcpy.Raster):
 
     def __init__(self, raster_path):
+    # Call the parent (arcpy.Raster) constructor – this validates the path
+    # and loads the raster into ArcPy's managed Raster object.    
         super().__init__(raster_path)
+
+        # Store the path for later use (e.g., logging, save‑as)
         self.raster_path = raster_path
+
+        # Pull useful metadata once so subsequent code can just look it up
         self.metadata = self._extract_metadata()
 
     def _extract_metadata(self):
+
+        # Describe gives us spatial info like extent, pixel size, etc.
         desc = arcpy.Describe(self.raster_path)
         extent = desc.extent
         
+        # Represent the bounding box in a GeoJSON‑like way (UL, LR) 
         bounds = [[extent.XMin, extent.YMax],
                   [extent.XMax, extent.YMin]]
 
@@ -82,8 +91,12 @@ class SmartRaster(arcpy.Raster):
 
         try: 
             ndvi = (nir-red)/(nir+red)
+            # If we reach this point, the calculation succeeded
+            okay = True            
             return okay, ndvi
         except Exception as e:
+            # Something went wrong: division by zero, mismatched array sizes, etc.
+            # We can catch the exception and return it to the user.
             okay = False
             returnval = e
             return okay, returnval
@@ -175,12 +188,12 @@ class SmartVectorLayer:
         #  Your code
         try:
             arcpy.sa.ZonalStatisticsAsTable(
-                in_zone_data = self.feature_class,
-                zone_field    = "OBJECTID",
-                in_value_raster = raster_path,
-                out_table      = temp_table,
-                ignore_nodata = "DATA",
-                statistics_type = statistic_type
+                in_zone_data = self.feature_class,  # polygons or raster zones
+                zone_field    = "OBJECTID",     # field to use as zone ID
+                in_value_raster = raster_path,  # raster to calculate stats from
+                out_table      = temp_table,    # output table name
+                ignore_nodata = "DATA",     # ignore NoData values in the raster
+                statistics_type = statistic_type # type of statistic to calculate mean, maximum, etc.
             )
         
         except Exception as e:
@@ -225,15 +238,20 @@ class SmartVectorLayer:
         # Your code
         try:
             with arcpy.da.UpdateCursor(self.feature_class, ["OBJECTID", output_field]) as cursor:
+                
                 count = 0
+                # Keeping the track of the number of rows updated
                 for row in cursor:
-                    object_id = row[0]
+                    object_id = row[0]      #Object ID from the feature class is the first field
+
+                    # Write the zonal statistics value only if it exists in the dictionary
                     if object_id in zonal_results:
                         row[1] = zonal_results[object_id]
                         cursor.updateRow(row)
                         count += 1
             print(f"Updated {count} rows with zonal statistics.")
         except Exception as e:
+            #Any Arcpy errors will be caught here and printed out
             print(f"Problem updating the feature class with zonal stats: {e}")
             okay = False
             return okay
@@ -378,13 +396,18 @@ class smartPanda(pd.DataFrame):
                 raise ValueError(f"Field '{field}' not found in DataFrame columns.")
 
         # filter the range
-        df_to_plot = self
+        df_to_plot = self       # Start with the whole original dataframe
+        
+        # Filter the Dataframe based on minimum x value
         if x_min is not None:
             df_to_plot = df_to_plot[df_to_plot[x_field] >= x_min]
+        # Filter the Dataframe based on maximum x value
         if x_max is not None:
             df_to_plot = df_to_plot[df_to_plot[x_field] <= x_max]
+        # Filter the Dataframe based on minimum y value
         if y_min is not None:
             df_to_plot = df_to_plot[df_to_plot[y_field] >= y_min]
+        # Filter the Dataframe based on maximum y value
         if y_max is not None:
             df_to_plot = df_to_plot[df_to_plot[y_field] <= y_max]
 
@@ -424,7 +447,11 @@ class smartPanda(pd.DataFrame):
         #     y_max -> numeric
              
 
-        try: 
+        try:
+            # Pandas reads the file into a DataFrame with two expected columns:
+            #   Param  |  Value
+            # Any I/O problem (file not found, permission denied, malformed CSV)
+            # raises an exception that we catch below. 
             params = pd.read_csv(csv_control_file_path)
         except Exception as e:
             print(f"Problem reading the {csv_control_file_path}")
@@ -437,6 +464,14 @@ class smartPanda(pd.DataFrame):
         #  definition of the dictionary -- 
         
         try:
+            #  The zip function takes two lists and zips them together
+            #   into a list of tuples.  So if you have two lists:
+            #   a = [1,2,3]
+            #   b = [4,5,6]
+            #   zip(a,b) will give you [(1,4), (2,5), (3,6)]
+            #  So we can use this to make a dictionary from the two columns
+            #   of the dataframe.  The first column is the key, and the second
+            # is the value.
             param_dict ={k.strip(): v for k,v in zip(params['Param'], params['Value'])}
 
         except Exception as e:
