@@ -475,17 +475,17 @@ class smartPanda(pd.DataFrame):
             self.save_scatterplot(param_dict['x_field'], 
                                param_dict['y_field'], 
                                param_dict['outfile'], 
-                               x_min = param_dict['x_min'], 
-                               x_max = param_dict['x_max'],
-                               y_min = param_dict['y_min'],
-                               y_max = param_dict['y_max'])
+                               x_min = int(param_dict['x_min']), 
+                               x_max = int(param_dict['x_max']),
+                               y_min = float(param_dict['y_min']),
+                               y_max = float(param_dict['y_max']))
             print(f"wrote to {params}")
             return True   # report back success
         except Exception as e:
             print(f"Problem saving the scatterplot: {e}")
 
         
-            
+ # End of Lab 4 functions           
         
         
 

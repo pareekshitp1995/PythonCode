@@ -1,0 +1,8 @@
+Param,Value
+x_field,YEAR_BUILT
+y_field ,NDVI_mean
+outfile,scatterplot_YearBuilt_vs_NDVI_mean_2000_2020.png
+x_min,2000
+x_max,2020
+y_min,0
+y_max,0.8

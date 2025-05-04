@@ -1,0 +1,8 @@
+Param,Value
+x_field,YEAR_BUILT
+y_field ,NDVI_mean
+outfile,scatterplot_YearBuilt_vs_NDVI_mean_1980_2025.png
+x_min,1980
+x_max,2500
+y_min,0
+y_max,1

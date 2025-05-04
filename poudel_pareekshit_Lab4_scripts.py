@@ -260,7 +260,7 @@ sp.scatterplot(x_field, y_field, x_min=1901, x_max = 2030)
 #   Here, and you have the name of the file for the control file
 #  Below, simply call the "plot_from_file" method to run the .csv file
 
-param_file = 'params_1.csv'  #  this assumes you've placed in the 
+param_file = 'params_4.csv'  #  this assumes you've placed in the 
                             # python code directory you're working in here. 
 # Your code:
 
@@ -286,14 +286,26 @@ if ok:
 #    numeric?   How might you make this work better?
 
 # Your answer
+# To make this work better, I added
+# int() and float() to the x and y fields in the scatterplot method to 
+# convert the values to ineger and float.
 
+# If I give it a field that is not numeric, the scatterplot will not be able
+# to plot the data correctly, and it raised an error indicating that the
+# problem saving the scatterplot. 
 
+# To make this work better, I could add a check to ensure that the
+# field is numeric before attempting to plot it.
+# This could be done by checking the data type of the field in the DataFrame
+# I would have to convert the string values to numeric values using the pd.to_numeric()
+# and check if the conversion was successful. If not, I could raise an error or
+# provide a warning message to the user indicating that the field is not numeric.
 
 
 # Question 8.2
 #  In your lab document, paste in a couple of the
 #    examples of the output .png files. 
-
+# I have inclued the exmple of the output png file in the lab reflection file.
 
 
 # Question 8.3
@@ -304,6 +316,7 @@ if ok:
 #   how you might achieve that?
 
 # Your answer:
+# I could modify the plot_from_file method to automatically generate the output file name 
+# based on the x and y field names and timestamps or other unique identifiers.
 
-
-
+# End of Lab 4
